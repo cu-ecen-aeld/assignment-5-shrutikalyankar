@@ -5,6 +5,3 @@
 	path = buildroot
 	url = https://gitlab.com/buildroot.org/buildroot.git
 	branch = 2024.02.x
-[submodule "aesd-assignments"]
-	path = aesd-assignments
-	url = git@github.com:cu-ecen-aeld/assignments-3-and-later-shrutikalyankar.git

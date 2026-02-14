@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #Script to build buildroot configuration
 #Author: Siddhant Jajoo
 
