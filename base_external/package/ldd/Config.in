@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LDD
+        bool "ldd"
+        help
+          Out-of-tree Linux Device Drivers from the ldd3 repository fork.
+          Builds and installs:
+            - misc-modules (hello + faulty)
+            - scull

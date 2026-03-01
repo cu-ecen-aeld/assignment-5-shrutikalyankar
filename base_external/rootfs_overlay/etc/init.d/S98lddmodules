@@ -1,0 +1,70 @@
+#!/bin/sh
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+make_node() {
+  # make_node <name> <minor>
+  name="$1"
+  minor="$2"
+
+  major="$(awk -v n="$name" '$2==n {print $1}' /proc/devices)"
+  if [ -n "$major" ] && [ ! -e "/dev/$name" ]; then
+    mknod "/dev/$name" c "$major" "$minor"
+    chmod 666 "/dev/$name"
+  fi
+}
+
+make_scull_nodes() {
+  major="$(awk '$2=="scull" {print $1}' /proc/devices)"
+  if [ -n "$major" ]; then
+    # Common scull nodes expected by validation
+    [ -e /dev/scull0 ] || mknod /dev/scull0 c "$major" 0
+    [ -e /dev/scull1 ] || mknod /dev/scull1 c "$major" 1
+    [ -e /dev/scull2 ] || mknod /dev/scull2 c "$major" 2
+    [ -e /dev/scull3 ] || mknod /dev/scull3 c "$major" 3
+    chmod 666 /dev/scull0 /dev/scull1 /dev/scull2 /dev/scull3 2>/dev/null || true
+  fi
+}
+
+case "$1" in
+  start)
+    echo "Loading ldd modules..."
+
+    # Load scull first, then create /dev nodes
+    modprobe scull 2>/dev/null || true
+    make_scull_nodes
+
+    # Load faulty, then create /dev/faulty
+    FAULTY_KO="$(find /lib/modules/$(uname -r) -name faulty.ko 2>/dev/null | head -n 1)"
+    if [ -n "$FAULTY_KO" ]; then
+      insmod "$FAULTY_KO" 2>/dev/null || true
+    fi
+    make_node faulty 0
+    
+# Load hello
+    modprobe hello 2>/dev/null || true
+    ;;
+
+  stop)
+    echo "Unloading ldd modules..."
+
+    rmmod hello 2>/dev/null || true
+    rmmod faulty 2>/dev/null || true
+    rmmod scull 2>/dev/null || true
+
+    # Optional: remove nodes (not required, but clean)
+    rm -f /dev/faulty /dev/scull0 /dev/scull1 /dev/scull2 /dev/scull3 2>/dev/null || true
+    ;;
+
+  restart)
+    "$0" stop
+    "$0" start
+    ;;
+
+  *)
+    echo "Usage: $0 {start|stop|restart}"
+    exit 1
+    ;;
+esac
+
+exit 0
